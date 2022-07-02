@@ -70,7 +70,7 @@ class SquareAttack():
         :param y:        correct labels if untargeted else target labels
         """
 
-        logits = self.predict(x)
+        logits = self.predict(x, y)
         xent = F.cross_entropy(logits, y, reduction='none')
         u = torch.arange(x.shape[0])
         y_corr = logits[u, y].clone()
@@ -554,12 +554,12 @@ class SquareAttack():
         if y is None:
             if not self.targeted:
                 with torch.no_grad():
-                    output = self.predict(x)
+                    output = self.predict(x, y)
                     y_pred = output.max(1)[1]
                     y = y_pred.detach().clone().long().to(self.device)
             else:
                 with torch.no_grad():
-                    output = self.predict(x)
+                    output = self.predict(x, y)
                     n_classes = output.shape[-1]
                     y_pred = output.max(1)[1]
                     y = self.random_target_classes(y_pred, n_classes)
@@ -567,9 +567,9 @@ class SquareAttack():
             y = y.detach().clone().long().to(self.device)
 
         if not self.targeted:
-            acc = self.predict(x).max(1)[1] == y
+            acc = self.predict(x, y).max(1)[1] == y
         else:
-            acc = self.predict(x).max(1)[1] != y
+            acc = self.predict(x, y).max(1)[1] != y
 
         startt = time.time()
 
@@ -586,7 +586,7 @@ class SquareAttack():
 
                 _, adv_curr = self.attack_single_run(x_to_fool, y_to_fool)
 
-                output_curr = self.predict(adv_curr)
+                output_curr = self.predict(adv_curr, y)
                 if not self.targeted:
                     acc_curr = output_curr.max(1)[1] == y_to_fool
                 else:

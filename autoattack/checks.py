@@ -21,7 +21,7 @@ def check_randomized(model, x, y, bs=250, n=5, alpha=1e-4, logger=None):
     outputs = []
     with torch.no_grad():
         for _ in range(n):
-            output = model(x)
+            output = model(x, y)
             corrcl_curr = (output.max(1)[1] == y).sum().item()
             corrcl.append(corrcl_curr)
             outputs.append(output / (L2_norm(output, keepdim=True) + 1e-10))
@@ -41,9 +41,9 @@ def check_randomized(model, x, y, bs=250, n=5, alpha=1e-4, logger=None):
             logger.log(f'Warning: {msg}')
 
 
-def check_range_output(model, x, alpha=1e-5, logger=None):
+def check_range_output(model, x, y, alpha=1e-5, logger=None):
     with torch.no_grad():
-        output = model(x)
+        output = model(x, y)
     fl = [output.max() < 1. + alpha, output.min() >  -alpha,
         ((output.sum(-1) - 1.).abs() < alpha).all()]
     if all(fl):
@@ -92,13 +92,13 @@ def tracefunc(frame, event, args):
         funcs[frame.f_code.co_name] += 1
 
         
-def check_dynamic(model, x, is_tf_model=False, logger=None):
+def check_dynamic(model, x, y, is_tf_model=False, logger=None):
     if is_tf_model:
         msg = 'the check for dynamic defenses is not currently supported'
     else:
         msg = None
     sys.settrace(tracefunc)
-    model(x)
+    model(x, y)
     sys.settrace(None)
     #for k, v in funcs.items():
     #    print(k, v)

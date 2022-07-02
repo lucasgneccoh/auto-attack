@@ -68,7 +68,7 @@ class AutoAttack():
         if version in ['standard', 'plus', 'rand']:
             self.set_version(version)
         
-    def get_logits(self, x):
+    def get_logits(self, x, y):
         if not self.is_tf_model:
             return self.model(x)
         else:
@@ -87,8 +87,10 @@ class AutoAttack():
             checks.check_randomized(self.get_logits, x_orig[:bs].to(self.device),
                 y_orig[:bs].to(self.device), bs=bs, logger=self.logger)
         n_cls = checks.check_range_output(self.get_logits, x_orig[:bs].to(self.device),
+            y_orig[:bs].to(self.device),
             logger=self.logger)
-        checks.check_dynamic(self.model, x_orig[:bs].to(self.device), self.is_tf_model,
+        checks.check_dynamic(self.model, x_orig[:bs].to(self.device),
+            y_orig[:bs].to(self.device),  self.is_tf_model,
             logger=self.logger)
         checks.check_n_classes(n_cls, self.attacks_to_run, self.apgd_targeted.n_target_classes,
             self.fab.n_target_classes, logger=self.logger)
@@ -104,7 +106,7 @@ class AutoAttack():
 
                 x = x_orig[start_idx:end_idx, :].clone().to(self.device)
                 y = y_orig[start_idx:end_idx].clone().to(self.device)
-                output = self.get_logits(x).max(dim=1)[1]
+                output = self.get_logits(x, y).max(dim=1)[1]
                 y_adv[start_idx: end_idx] = output
                 correct_batch = y.eq(output)
                 robust_flags[start_idx:end_idx] = correct_batch.detach().to(robust_flags.device)
@@ -183,7 +185,7 @@ class AutoAttack():
                     else:
                         raise ValueError('Attack not supported')
                 
-                    output = self.get_logits(adv_curr).max(dim=1)[1]
+                    output = self.get_logits(adv_curr, y).max(dim=1)[1]
                     false_batch = ~y.eq(output).to(robust_flags.device)
                     non_robust_lin_idcs = batch_datapoint_idcs[false_batch]
                     robust_flags[non_robust_lin_idcs] = False
@@ -227,7 +229,7 @@ class AutoAttack():
         for counter in range(n_batches):
             x = x_orig[counter * bs:min((counter + 1) * bs, x_orig.shape[0])].clone().to(self.device)
             y = y_orig[counter * bs:min((counter + 1) * bs, x_orig.shape[0])].clone().to(self.device)
-            output = self.get_logits(x)
+            output = self.get_logits(x, y)
             acc += (output.max(1)[1] == y).float().sum()
             
         if self.verbose:
