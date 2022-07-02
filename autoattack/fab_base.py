@@ -267,7 +267,7 @@ class FABAttack():
             self.device = x.device
         adv = x.clone()
         with torch.no_grad():
-            acc = self._predict_fn(x, f).max(1)[1] == y
+            acc = self._predict_fn(x, y).max(1)[1] == y
 
             startt = time.time()
 
