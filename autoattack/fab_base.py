@@ -68,10 +68,10 @@ class FABAttack():
     def check_shape(self, x):
         return x if len(x.shape) > 0 else x.unsqueeze(0)
 
-    def _predict_fn(self, x, y):
+    def _predict_fn(self, x):
         raise NotImplementedError("Virtual function.")
 
-    def _get_predicted_label(self, x, y):
+    def _get_predicted_label(self, x):
         raise NotImplementedError("Virtual function.")
 
     def get_diff_logits_grads_batch(self, imgs, la):
@@ -95,7 +95,7 @@ class FABAttack():
         x = x.detach().clone().float().to(self.device)
         #assert next(self.predict.parameters()).device == x.device
 
-        y_pred = self._get_predicted_label(x, y)
+        y_pred = self._get_predicted_label(x)
         if y is None:
             y = y_pred.detach().clone().long().to(self.device)
         else:
@@ -225,7 +225,7 @@ class FABAttack():
                 x1 = ((x1 + self.eta * d1) * (1 - alpha) +
                         (im2 + d2 * self.eta) * alpha).clamp(0.0, 1.0)
 
-                is_adv = self._get_predicted_label(x1, y) != la2
+                is_adv = self._get_predicted_label(x1) != la2
 
                 if is_adv.sum() > 0:
                     ind_adv = is_adv.nonzero().squeeze()
@@ -267,8 +267,7 @@ class FABAttack():
             self.device = x.device
         adv = x.clone()
         with torch.no_grad():
-            acc = self._predict_fn(x, y).max(1)[1] == y
-
+            acc = self._predict_fn(x).max(1)[1] == y
             startt = time.time()
 
             torch.random.manual_seed(self.seed)
@@ -282,7 +281,7 @@ class FABAttack():
                         x_to_fool, y_to_fool = x[ind_to_fool].clone(), y[ind_to_fool].clone()
                         adv_curr = self.attack_single_run(x_to_fool, y_to_fool, use_rand_start=(counter > 0), is_targeted=False)
 
-                        acc_curr = self._predict_fn(adv_curr, y).max(1)[1] == y_to_fool
+                        acc_curr = self._predict_fn(adv_curr).max(1)[1] == y_to_fool
                         if self.norm == 'Linf':
                             res = (x_to_fool - adv_curr).abs().reshape(x_to_fool.shape[0], -1).max(1)[0]
                         elif self.norm == 'L2':
@@ -309,7 +308,7 @@ class FABAttack():
                             x_to_fool, y_to_fool = x[ind_to_fool].clone(), y[ind_to_fool].clone()
                             adv_curr = self.attack_single_run(x_to_fool, y_to_fool, use_rand_start=(counter > 0), is_targeted=True)
 
-                            acc_curr = self._predict_fn(adv_curr, y).max(1)[1] == y_to_fool
+                            acc_curr = self._predict_fn(adv_curr).max(1)[1] == y_to_fool
                             if self.norm == 'Linf':
                                 res = (x_to_fool - adv_curr).abs().reshape(x_to_fool.shape[0], -1).max(1)[0]
                             elif self.norm == 'L2':
