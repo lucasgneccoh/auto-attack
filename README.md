@@ -277,3 +277,9 @@ To log the intermediate results of the evaluation specify `log_path=/path/to/log
     year={2021}
 }
 ```
+
+## Differences from main repo
+
+Main difference is that I am adapting this code for mixtures of models
+
+
