@@ -109,7 +109,7 @@ class FABAttack():
         pred = self.check_shape(pred.nonzero().squeeze())
 
         if is_targeted:
-            output = self._predict_fn(x, y)
+            output = self._predict_fn(x)
             la_target = output.sort(dim=-1)[1][:, -self.target_class]
             la_target2 = la_target[pred].detach().clone()
 
