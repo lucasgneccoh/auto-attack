@@ -34,7 +34,7 @@ def check_randomized(model, x, y, bs=250, n=5, alpha=1e-4, logger=None):
             #print(diff.max().item(), max_diff)
     if any(acc) or max_diff > alpha:
         msg = 'it seems to be a randomized defense! Please use version="rand".' + \
-            f' See {checks_doc_path} for details.'
+            f' See {checks_doc_path} for details. {corrcl}, {max_diff}'
         if logger is None:
             warnings.warn(Warning(msg))
         else:
